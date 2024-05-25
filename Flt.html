@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>js-dos 6.22, Digger</title>
+  <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
+  <style>
+    html,
+    body,
+    canvas,
+    .dosbox-container {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="jsdos"></canvas>
+  <script>
+    const initialCycles = 3000;
+    let currentCycles = initialCycles;
+    let frameCount = 0;
+    let lastTime = performance.now();
+
+    // Function to adjust cycles dynamically
+    function adjustCycles(runtime) {
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - lastTime;
+
+      if (elapsedTime >= 1000) {
+        const fps = frameCount / (elapsedTime / 1000);
+        console.log(`FPS: ${fps}, Cycles: ${currentCycles}`);
+
+        // Adjust cycles based on FPS
+        if (fps < 20) {
+          currentCycles = Math.max(1000, currentCycles - 500);
+        } else if (fps > 30) {
+          currentCycles = currentCycles + 1500;
+        }
+
+        runtime.setCycles(currentCycles);
+
+        frameCount = 0;
+        lastTime = currentTime;
+      } else {
+        frameCount++;
+      }
+
+      requestAnimationFrame(() => adjustCycles(runtime));
+    }
+
+    // Initialize js-dos with the canvas element
+    Dos(document.getElementById("jsdos"), {
+      wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js",
+      cycles: initialCycles,
+      autolock: false,
+    }).ready(function (fs, main, runtime) {
+      fs.extract("FLTSIM.zip").then(function () {
+        main(["-c", "FS5.COM"]).then(function (ci) {
+          window.ci = ci;
+          // Start the cycle adjustment loop
+          adjustCycles(runtime);
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
